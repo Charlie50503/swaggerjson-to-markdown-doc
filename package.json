@@ -1,0 +1,17 @@
+{
+  "name": "source",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "tsc && node ./dist/main.js",
+    "test": "tsc && node ./dist/main.test.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@types/node": "^20.5.1",
+    "markdown-table": "^3.0.3",
+    "typescript": "^5.1.6"
+  }
+}
