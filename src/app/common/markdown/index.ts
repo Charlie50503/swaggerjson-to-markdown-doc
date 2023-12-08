@@ -1,4 +1,3 @@
-// import { markdownTable } from 'markdown-table';
 import { MarkdownTitleLevel } from './enum/markdownTitleLevel.enum';
 import { genMarkdownBulletList } from './services/genMarkdownBulletList.service';
 import { genMarkdownCodeBlock } from './services/genMarkdownCodeBlock';
@@ -6,6 +5,7 @@ import { genMarkdownDivider } from './services/genMarkdownDivider';
 import { genMarkdownTitle } from './services/genMarkdownTitle.service';
 import { HttpMethod } from '../../swagger-json/swagger-json.interface';
 import { getMarkdownTable } from 'markdown-table-ts';
+import { genMarkdownUrl } from './services/genMarkdownUrl.service';
 
 export namespace Markdown {
   export class Details {
@@ -15,57 +15,67 @@ export namespace Markdown {
       this.details = details;
     }
 
-    build() {
+    async build() {
+      const responseStrings = await Promise.all(
+        this.details.map(async (detail) => await detail.build())
+      );
       return (
         /*markdown*/ `${genMarkdownTitle(MarkdownTitleLevel.h2, 'Details')}` +
-        this.details.map((detail) => detail.build()).join('\n')
+        responseStrings.join('\n')
       );
     }
   }
   export class Detail {
-    name: string;
-    detailAPI: DetailAPI;
+    detailGroupName: string;
+    detailAPIList: DetailAPI[];
 
-    constructor(name: string, detailAPI: DetailAPI) {
-      this.name = name;
-      this.detailAPI = detailAPI;
+    constructor(detailGroupName: string, detailAPIList: DetailAPI[]) {
+      this.detailGroupName = detailGroupName;
+      this.detailAPIList = detailAPIList;
     }
 
-    build() {
-      return /*markdown*/ `
-        ${genMarkdownTitle(MarkdownTitleLevel.h3, this.name)}
-
-        ${this.detailAPI.build()}
-      `;
+    async build() {
+      const responseStrings = await Promise.all(
+        this.detailAPIList.map(async (detailAPI) => await detailAPI.build())
+      );
+      return (
+        /*markdown*/ `
+        ${genMarkdownTitle(MarkdownTitleLevel.h3, this.detailGroupName)}
+      ` + responseStrings.join('\n')
+      );
     }
   }
   export class DetailAPI {
-    name: string;
+    apiName: string;
     requestExample?: RequestExample;
     responseExamples?: ResponseExample[];
 
     constructor(
-      name: string,
+      apiName: string,
       requestExample?: RequestExample,
       responseExample?: ResponseExample[]
     ) {
-      this.name = name;
+      this.apiName = apiName;
       this.requestExample = requestExample;
       this.responseExamples = responseExample;
     }
 
-    build() {
+    async build() {
+      let responseStrings: string[] = [];
+      if (this.responseExamples) {
+        responseStrings = await Promise.all(
+          this.responseExamples.map(
+            async (responseExample) => await responseExample.build()
+          )
+        );
+      }
+
       return (
         /*markdown*/ `
-        ${genMarkdownTitle(MarkdownTitleLevel.h4, this.name)}
+        ${genMarkdownTitle(MarkdownTitleLevel.h4, this.apiName)}
 
-        ${this.requestExample ? this.requestExample.build() : ''}
-      ` +
-        (this.responseExamples
-          ? this.responseExamples
-              .map((responseExample) => responseExample.build())
-              .join('\n')
-          : '')
+        ${this.requestExample ? await this.requestExample.build() : ''}
+      ` + responseStrings.join('\n')
       );
     }
   }
@@ -80,11 +90,12 @@ export namespace Markdown {
       }
     }
 
-    build() {
+    async build() {
       return `
         ${genMarkdownBulletList([`Response Example`])}
-        ${this.description}
-        ${genMarkdownCodeBlock('json', this.responseBody)}
+
+        Description: ${this.description}
+        ${await genMarkdownCodeBlock('json', this.responseBody)}
       `;
     }
   }
@@ -98,11 +109,12 @@ export namespace Markdown {
       }
     }
 
-    build() {
+    async build() {
       return `
         ${genMarkdownBulletList([`Request Example`])}
-        ${this.description}
-        ${genMarkdownCodeBlock('json', this.requestBody)}
+
+        Description: ${this.description}
+        ${await genMarkdownCodeBlock('json', this.requestBody)}
       `;
     }
   }
@@ -138,7 +150,7 @@ export namespace Markdown {
     genTableContent() {
       return this.endpointAPIList.map((endpointAPI) => {
         return [
-          endpointAPI.name,
+          genMarkdownUrl(endpointAPI.name, '#' + endpointAPI.name),
           endpointAPI.method,
           endpointAPI.path,
           endpointAPI.parameters.join('\n'),
@@ -150,6 +162,8 @@ export namespace Markdown {
 
     build() {
       return /*markdown*/ `
+      ${genMarkdownTitle(MarkdownTitleLevel.h3, this.name)}
+
       ${getMarkdownTable({
         table: {
           head: this.tableHeader,

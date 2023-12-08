@@ -12,7 +12,6 @@ export class SwaggerFileLoader {
   public async handlingFetch(url: string): Promise<Response> {
     const result = await this.fetchAPI(url);
     if (result.status !== 200) {
-      console.error(result);
       throw Error('fail to fetch swagger file');
     }
     return result;

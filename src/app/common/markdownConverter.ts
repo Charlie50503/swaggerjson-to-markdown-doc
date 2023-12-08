@@ -13,7 +13,7 @@ import { Markdown } from './markdown/index';
 export class MarkdownConverter {
   interfaceMap = new Map<string, object | string>();
   constructor() {}
-  public convert(data: SwaggerJSON, url: string) {
+  public async convert(data: SwaggerJSON, url: string) {
     this.getInterfaceMap(data);
     const header = HeaderGenerator.generateHeader(data, url);
     const endpoints = EndpointBlockGenerator.generateEndpointBlock(data);
@@ -24,16 +24,37 @@ export class MarkdownConverter {
       `
       ${header.build()}
       ${endpoints.build()}
-      ${details.build()}
+      ${await details.build()}
     `
     );
   }
+
   private formatMarkdown(content: string) {
+    let isFormatTarget = true;
     // 去除 行前後空白
     return content
       .split('\n')
-      .map((line) => line.trim())
+      .map((line) => {
+        let newLine = line;
+        if (line.includes('```')) {
+          isFormatTarget = !isFormatTarget;
+        }
+        if(line.includes('```') && line.length > 3){
+          newLine = newLine.trim();
+        }
+
+        if (isFormatTarget) {
+          newLine = newLine.trim();
+        }
+
+
+
+        return newLine;
+      })
       .join('\n');
+  }
+  private isFormatMarkdownTarget(line: string) {
+    return line.trim().startsWith('#');
   }
 
   private getInterfaceMap(data: SwaggerJSON) {
@@ -42,8 +63,6 @@ export class MarkdownConverter {
     }
     Object.entries(data.components.schemas).forEach(
       ([interfaceName, interfaceBody]) => {
-        console.log(interfaceName);
-
         if (interfaceBody.properties) {
           this.interfaceMap.set(
             interfaceName,
@@ -61,8 +80,6 @@ export class MarkdownConverter {
     );
     Object.entries(data.components.schemas).forEach(
       ([interfaceName, interfaceBody]) => {
-        console.log(interfaceName);
-
         if (interfaceBody.properties) {
           this.interfaceMap.set(
             interfaceName,
@@ -100,8 +117,6 @@ export class MarkdownConverter {
         if (interfaceObj) {
           obj[`${propertyName}`] = interfaceObj;
         } else {
-          console.log(this.interfaceMap);
-          console.log(propertyName);
           throw Error('沒有找到可參照物件 genInterfaceBodyRef');
         }
       }
@@ -121,9 +136,6 @@ export class MarkdownConverter {
         if (interfaceObj) {
           obj[`${propertyName}`] = interfaceObj;
         } else {
-          console.log(this.interfaceMap);
-          console.log(propertyName);
-          console.log(propertyContent.items.$ref!);
           throw Error('沒有找到可參照物件 genInterfaceBodyArray');
         }
       }

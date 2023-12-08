@@ -9,16 +9,15 @@ import { Markdown } from './markdown/index';
 
 export class EndpointBlockGenerator {
   public static generateEndpointBlock(data: SwaggerJSON) {
-    data.paths[0];
-    const endpointAPIMapList = new Map<string, Markdown.EndpointAPI[]>();
+    const endpointAPIListMap = new Map<string, Markdown.EndpointAPI[]>();
     for (const [path, methodObj] of Object.entries(data.paths)) {
       for (const [method, content] of Object.entries(methodObj)) {
-        if (!endpointAPIMapList.has(content.tags[0])) {
-          endpointAPIMapList.set(path, [
+        if (!endpointAPIListMap.has(content.tags[0])) {
+          endpointAPIListMap.set(content.tags[0], [
             this.generateEndpointAPI(path, method as HttpMethod, content),
           ]);
         } else {
-          endpointAPIMapList
+          endpointAPIListMap
             .get(content.tags[0])!
             .push(
               this.generateEndpointAPI(path, method as HttpMethod, content)
@@ -27,12 +26,17 @@ export class EndpointBlockGenerator {
       }
     }
     const endpoints: Markdown.Endpoint[] = [];
-    for (const [endpointName, endpointObj] of Object.entries(
-      endpointAPIMapList
-    )) {
-      endpoints.push(new Markdown.Endpoint(endpointName, endpointObj));
-    }
+    endpointAPIListMap.forEach((endpointAPIList, endpointName) => {
+      endpoints.push(new Markdown.Endpoint(endpointName, endpointAPIList));
+    });
     return new Markdown.EndpointBlock(endpoints);
+  }
+
+  public static generatorEndpoint(
+    name: string,
+    endpointAPIList: Markdown.EndpointAPI[]
+  ) {
+    return new Markdown.Endpoint(name, endpointAPIList);
   }
 
   private static generateEndpointAPI(

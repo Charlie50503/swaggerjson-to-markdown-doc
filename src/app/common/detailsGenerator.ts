@@ -15,18 +15,31 @@ export class DetailsGenerator {
   }
 
   public generateDetails(data: SwaggerJSON): Markdown.Details {
-    const details: Markdown.Detail[] = [];
+    const detailAPIListMap = new Map<string, Markdown.DetailAPI[]>();
     Object.entries(data.paths).forEach(([pathName, path]) => {
       Object.entries(path).forEach(([method, content]) => {
-        details.push(this.generateDetail(content.summary, content));
+        if (!detailAPIListMap.has(content.tags[0])) {
+          detailAPIListMap.set(content.tags[0], [
+            this.generateDetailAPI(content)
+          ]);
+        } else {
+          detailAPIListMap
+            .get(content.tags[0])!
+            .push(
+              this.generateDetailAPI(content)
+            );
+        }
       });
     });
+
+    const details: Markdown.Detail[] = [];
+    detailAPIListMap.forEach((detailAPIList, detailGroupName) => {
+      details.push(new Markdown.Detail(detailGroupName, detailAPIList));
+    });
+
     return new Markdown.Details(details);
   }
 
-  private generateDetail(name: string, content: SwaggerJSONPathContent) {
-    return new Markdown.Detail(name, this.generateDetailAPI(content));
-  }
   private generateDetailAPI(content: SwaggerJSONPathContent) {
     if (!content.summary) {
       throw Error('該 API Summary is empty');
