@@ -1,17 +1,21 @@
 {
-  "name": "source",
+  "name": "trans-swagger-json",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "engines": {
+    "node": ">=16.0.0"
+  },
   "scripts": {
-    "start": "tsc && node ./dist/main.js",
-    "test": "tsc && node ./dist/main.test.js"
+    "start": "tsc && node ./dist/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@types/node": "^20.5.1",
-    "markdown-table": "^3.0.3",
-    "typescript": "^5.1.6"
+    "markdown-table-ts": "^1.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.3",
+    "typescript": "^5.3.2"
   }
 }
